@@ -1,0 +1,32 @@
+\documentclass{article}
+\usepackage{multirow}
+\setlength\parindent{0pt}
+\usepackage{geometry}
+\usepackage{longtable}
+\usepackage{float}
+\geometry{left=1.5cm,right=1.5cm,top=1.5cm,bottom=1.5cm}
+
+\title{GENmatic GWAS QC Demo}
+\author{Ryan Del Bel}
+
+\begin{document}
+\maketitle
+
+<<,include=FALSE>>=
+require(reportRx)
+require(GENmatic)
+@
+
+<<,echo=FALSE,results='asis',message=FALSE,fig.align='center',fig.height=6>>=
+initiate_QC()
+remove_sex_problems()
+remove_missing()
+remove_relatives()
+remove_heterozygocity()
+remove_maf()
+end_QC()
+@
+
+
+
+\end{document}

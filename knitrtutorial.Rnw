@@ -1,0 +1,127 @@
+\documentclass{article}
+\setlength\parindent{0pt}
+\usepackage{geometry}
+\usepackage{longtable}
+\usepackage{float}
+
+%This is word 'normal' margins
+\geometry{left=1.25in,right=1in,top=1.25in,bottom=1.25in}
+
+\title{Knitr Short Demonstration}
+\author{Ryan Del Bel}
+\begin{document}
+\maketitle
+
+This is \LaTeX
+<<>>=
+#This is R
+#Everything here will be printed with a fancy background
+#There are no '>' because Xie YiHui thinks they are ugly and he can do what he wants
+#There. is an option to put them back in though
+x<-1
+y<-x
+x<-2
+y
+
+print("Look R passes by value not by reference")
+foo<-function(){
+           #The most useful feature in R
+df<-iris[,1,drop=F]
+print(class(df))
+head(df)
+}
+#knitr automatically makes our code pretty
+@
+
+
+
+
+Our session persists between chunks
+<<>>=
+foo()
+@
+
+
+We can specify chunk options inside the $<<>>=$. In Rstudio there is even autocompletion. 
+We use echo=F to hide the code.
+<<,echo=FALSE>>=
+#I don't want to show this code but I want to show the result.
+fancystuff<-function(){
+ if(.Platform$OS.type == "unix") 
+   return(system("ls",intern=T))
+system("dir",intern=T)}
+  
+fancystuff()
+@
+
+If we want to show the code but not the result we can use results='hide'
+<<pearson,results='hide'>>=
+#This is just the code but not the results
+#We fit the following model
+lm(iris[,1]~.,data=iris)
+@
+
+What if we we dont want to include the code or the results. Use include=F
+<<,include=FALSE>>=
+#Require a package
+require(xtable)
+print("this is not going to show up")
+@
+
+What about plots?
+<<,fig.height=3,fig.width=5,fig.align='center',echo=FALSE>>=
+require(ggplot2)
+df<-data.frame(rnorm(100),ifelse(rbinom(100,1,.5)==1,"Male","Female"),rnorm(100))
+colnames(df)<-c("Height","Gender","BMI")
+ggplot(df, aes(x=Height, fill=Gender)) + geom_density(alpha=.3)
+ggplot(df, aes(x=BMI, fill=Gender)) + geom_density(alpha=.3)
+@
+
+
+If we want the plots side by side we dont have to use mfrow. Use fig.show='hold' and specify a proper width. Also note that we got a message when we used require(ggplot2). We can supress the 'red text' we see in the R console by using warning=F, message=F, and error=F respectively.
+
+<<,fig.height=3,fig.width=3,fig.show='hold', fig.align='center',echo=FALSE,warning=FALSE,message=FALSE,error=FALSE>>=
+require(stringr) #We get no message now
+df<-data.frame(rnorm(100),ifelse(rbinom(100,1,.5)==1,"Male","Female"),rnorm(100))
+colnames(df)<-c("Height","Gender","BMI")
+ggplot(df, aes(x=Height, fill=Gender)) + geom_density(alpha=.3)+ theme(legend.position="bottom")
+ggplot(df, aes(x=BMI, fill=Gender)) + geom_density(alpha=.3) + theme(legend.position="bottom")
+@
+
+We can use several packages to turn dataframes into \LaTeX tables. Fuction latex in Hmisc is probably the best. The tables made are 'too nice' and cant be converted to .docx. If our goal is to make a .docx we can use the package xtable but as we will see it is not that nice to work with.
+<<>>=
+df[,2]<-as.character(df[,2])
+df[1,]<-sapply(df[1,],function(x) paste0("\\textbf{",x,"}"))
+xtable(df)
+@
+
+Oops. The output of xtable is raw \LaTeX code. We want to directly inject the R output into the latex, not wrap it in a fancy formatting. We can use results='asis' To accomplish this.
+<<,results='asis'>>=
+xtable(df)
+@
+
+Where did our table go? By default \LaTeX does not place tables directly where they were created, but will figure out a 'nice' place to put them via some algorithm. We can override this by using print.xtable. print.xtable has 32 options. Most of which we will not discuss.
+
+<<,results='asis'>>=
+#We want our \textbf{} to invoke a latex command. It does not do it by default since xtable will sanitize our output so that it does not break latex. Function latex in package Hmisc has a smart way to inject arbitrary LaTeX commands into arbitrary cells of the dataframe. xtable does not so we do it by hand. This is a problem because we need to make sure that our text is sanitized before we use the xtable function, so that we can turn the xtable sanitization off and invoke our latex commands.
+
+#table.placement="H" tells latex to put the table exactly where we have it in the .Rnw file and not try and find an 'optimal' place for it.
+#tabular.environment="longtable" is to tell latex we want a longtable. This table will not convert properly to a .docx file so we will not usually use it.
+print.xtable(xtable(df),include.rownames=F,sanitize.text.function=identity,table.placement="H",tabular.environment="longtable")
+@
+
+We can also inject \LaTeX code form R using the cat function with results='asis'. This is usefull as we can easily programiticaly write \LaTeX to create templates for reports.
+<<,echo=FALSE,results='asis'>>=
+x<-1:3
+for (i in x){
+  cat("\\section{This is a section x=\\textbf{",i,"}}")
+  cat("This is under the section")
+}
+@
+
+We can also inject R in \LaTeX using. For example \Sexpr{sqrt(head(iris)[,1])}.\\
+
+You can knit a file in the command line using\\
+\$ Rscript -e "library(knitr); knit('$<$rnwfilename$>$.Rnw')"\\
+There are many more things you can do with knitr. The knitr website has surprisingly good documentation.
+\end{document}
